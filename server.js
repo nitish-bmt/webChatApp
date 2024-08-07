@@ -51,9 +51,9 @@ io.on('connection', socket=>{
       io.to(user.room).emit('message', formatMessage(bot, `${user.username} left the chat`));
     }
   
-    io.to(user.room).emit('roomUsers', ()=>{
-      room: user.room;
-      users: getRoomUsers(user.room);
+    io.to(user.room).emit('roomUsers', {
+      room: user.room,
+      users: getRoomUsers(user.room),
     });
   })
 
