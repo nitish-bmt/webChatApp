@@ -6,6 +6,7 @@ const http = require('http');
 // No need to refresh like HTTP requests
 const socketio = require("socket.io");
 const formatMessage = require('./utils/messages');
+const {userJoin, getCurrentUser, getRoomUsers, userLeave} = require('./users');
 
 const app = express();
 
@@ -20,26 +21,45 @@ const io = socketio(server);
 app.use(express.static(path.join((__dirname, './public'))));
 
 
-const bot = 'NITISH';
+const bot = 'ADMIN';
 io.on('connection', socket=>{
 
-  socket.on('joinRoom', ({username, room}={
-    socket.emit
+  socket.on('joinRoom', ({username, room})=>{
+
+    const user = userJoin(socket.id, username, room);
+    socket.join(user.room);
+
+    socket.emit('message', formatMessage(bot, 'Welcome to my chatApp'));
+
+    socket.broadcast.to(user.room).emit('message', formatMessage(bot,`${user.username} joined the chat`));
+  
+    io.to(user.room).emit('roomUsers', {
+      room: user.room,
+      users: getRoomUsers(user.room),
+    });
   });
   console.log('new node connected');
 
-  // to the new node 
-  socket.emit('message', formatMessage(bot, 'Welcome to my chatApp'));
 
-  // to all expect new node
-  socket.broadcast.emit('message','joined the chat');
 
   socket.on('disconnect', ()=>{
-    socket.broadcast.emit('message', 'left the chat');
+    const user = userLeave(socket.id);
+
+    console.log(`${user.username}disconneted`);
+
+    if(user){
+      io.to(user.room).emit('message', formatMessage(bot, `${user.username} left the chat`));
+    }
+  
+    io.to(user.room).emit('roomUsers', ()=>{
+      room: user.room;
+      users: getRoomUsers(user.room);
+    });
   })
 
   socket.on('chatMessage',message=>{
-    io.emit('message', formatMessage('nitish', message));
+    const user = getCurrentUser(socket.id);
+    io.to(user.room).emit('message', formatMessage(user.username, message));
   })
   // to all including the new node
   // io.emit('message', 'message string');

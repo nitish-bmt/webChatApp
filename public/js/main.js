@@ -9,13 +9,18 @@ const {username, room} = Qs.parse(location.search, {
 const msgForm = document.getElementById('chat-form');
 const chatMessages = document.querySelector('.chat-messages');
 
+console.log({username, room});
 // sending data on 'joinRoom' event
-socket.on('joinRoom', {username, room});
+socket.emit('joinRoom', {username, room});
 
 socket.on('message', message=>{
   console.log(message);
   addToPage(message);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+});
+
+socket.on('roomUsers', ({room, users})=>{
+  addUsersToPage({room, users});
 });
 
 // msgForm.msg.value
@@ -52,4 +57,20 @@ function addToPage(messageObj){
 		<p class="text">${message}</p>`;
     
   document.querySelector('.chat-messages').appendChild(newDiv);
+}
+
+function addUsersToPage({room, users}){
+
+  const roomElement = document.getElementById('room-name');
+  const usersList = document.getElementById('users');
+
+  roomElement.innerText = room;
+  usersList.innerHTML = '';
+  users.map((user)=>{
+    const userListItem = document.createElement("li");
+    userListItem.innerText = user.username;
+
+    usersList.appendChild(userListItem);
+  });
+
 }
