@@ -23,6 +23,7 @@ socket.on('roomUsers', ({room, users})=>{
   addUsersToPage({room, users});
 });
 
+
 // msgForm.msg.value
 // Why can;t i use this instead of event listener
 // msgForm.onsubmit((e)=>{

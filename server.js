@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const http = require('http');
+const os = require('os');
 
 // bidirectional communication
 // No need to refresh like HTTP requests
@@ -20,6 +21,20 @@ const io = socketio(server);
 // connect the be to fe via static folder
 app.use(express.static(path.join((__dirname, './public'))));
 
+app.get('/healthcheck',(req, res)=>{
+
+  const systemUptimeInSecs = os.uptime();
+  const systemUptime = `${Math.floor(systemUptimeInSecs/(60*60))}hrs, ${Math.floor((systemUptimeInSecs%(60*60))/60)}mins, ${Math.floor(systemUptimeInSecs%60)}secs`;
+
+  const serverUptimeInSecs = process.uptime();
+  const serverUptime = `${Math.floor(serverUptimeInSecs/(60*60))}hrs, ${Math.floor((serverUptimeInSecs%(60*60))/60)}mins, ${Math.floor(serverUptimeInSecs%60)}secs`;
+
+  res.json({
+    status: 200,
+    serverUptime: serverUptime,
+    systemUptime: systemUptime
+  })
+})
 
 const bot = 'ADMIN';
 io.on('connection', socket=>{
@@ -40,21 +55,20 @@ io.on('connection', socket=>{
   });
   console.log('new node connected');
 
-
-
   socket.on('disconnect', ()=>{
     const user = userLeave(socket.id);
 
-    console.log(`${user.username}disconneted`);
+    console.log(`${user.username} disconnected`);
 
     if(user){
       io.to(user.room).emit('message', formatMessage(bot, `${user.username} left the chat`));
-    }
   
     io.to(user.room).emit('roomUsers', {
       room: user.room,
       users: getRoomUsers(user.room),
     });
+    }
+  
   })
 
   socket.on('chatMessage',message=>{
